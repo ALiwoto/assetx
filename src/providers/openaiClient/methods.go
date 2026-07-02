@@ -8,14 +8,19 @@ import (
 	"net/http"
 )
 
-func (client Client) CreateImage(ctx context.Context, imageRequest ImageRequest) ([]byte, error) {
+func (client Client) CreateImage(ctx context.Context, imageRequest *ImageRequest) ([]byte, error) {
 	requestBody, contentType, endpointPath, cleanup, err := buildImageRequestBody(imageRequest)
 	if err != nil {
 		return nil, err
 	}
 	defer cleanup()
 
-	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, imageEndpoint(client.BaseURL, endpointPath), requestBody)
+	httpRequest, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		imageEndpoint(client.BaseURL, endpointPath),
+		requestBody,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create image API request: %w", err)
 	}

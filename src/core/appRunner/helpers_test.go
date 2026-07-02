@@ -10,7 +10,7 @@ import (
 func TestNormalizeImageRequestRequiresOneNotePerExample(t *testing.T) {
 	examplePath := createTestExampleFile(t, "screenshot.png")
 
-	_, _, _, err := normalizeImageRequest(ImageRequest{
+	_, _, err := normalizeImageRequest(&ImageRequest{
 		Examples:   []string{examplePath},
 		OutputPath: "out.png",
 		Prompt:     "make an icon",
@@ -24,7 +24,7 @@ func TestNormalizeImageRequestRequiresOneNotePerExample(t *testing.T) {
 }
 
 func TestNormalizeImageRequestRejectsNotesWithoutExamples(t *testing.T) {
-	_, _, _, err := normalizeImageRequest(ImageRequest{
+	_, _, err := normalizeImageRequest(&ImageRequest{
 		ExampleNotes: []string{"screenshot of my game"},
 		OutputPath:   "out.png",
 		Prompt:       "make an icon",
@@ -41,7 +41,7 @@ func TestNormalizeImageRequestAppendsExampleNotesToPrompt(t *testing.T) {
 	screenshotPath := createTestExampleFile(t, "screenshot1.png")
 	assetPath := createTestExampleFile(t, "sword.png")
 
-	request, _, _, err := normalizeImageRequest(ImageRequest{
+	request := &ImageRequest{
 		ExampleNotes: []string{
 			"screenshot of my game",
 			"existing asset style reference",
@@ -52,7 +52,8 @@ func TestNormalizeImageRequestAppendsExampleNotesToPrompt(t *testing.T) {
 		},
 		OutputPath: "out.png",
 		Prompt:     "make an axe",
-	})
+	}
+	_, _, err := normalizeImageRequest(request)
 	if err != nil {
 		t.Fatalf("normalizeImageRequest returned error: %v", err)
 	}
@@ -67,6 +68,16 @@ func TestNormalizeImageRequestAppendsExampleNotesToPrompt(t *testing.T) {
 		if !strings.Contains(request.Prompt, expectedSnippet) {
 			t.Fatalf("Expected prompt to contain %q, but got:\n%s", expectedSnippet, request.Prompt)
 		}
+	}
+}
+
+func TestNormalizeImageRequestRejectsNilRequest(t *testing.T) {
+	_, _, err := normalizeImageRequest(nil)
+	if err == nil {
+		t.Fatal("Expected nil request error, but got nil")
+	}
+	if !strings.Contains(err.Error(), "request is nil") {
+		t.Fatalf("Expected nil request error, but got %q", err.Error())
 	}
 }
 

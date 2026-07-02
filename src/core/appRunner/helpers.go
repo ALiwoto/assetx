@@ -13,26 +13,26 @@ import (
 	"strings"
 )
 
-func RunImage(request ImageRequest, stdout io.Writer) error {
-	normalizedRequest, outputFormat, needsChromaTransparency, err := normalizeImageRequest(request)
+func RunImage(request *ImageRequest, stdout io.Writer) error {
+	outputFormat, needsChromaTransparency, err := normalizeImageRequest(request)
 	if err != nil {
 		return err
 	}
 
-	config, err := appConfig.LoadConfig(normalizedRequest.ConfigPath)
+	config, err := appConfig.LoadConfig(request.ConfigPath)
 	if err != nil {
 		return err
 	}
 
 	client := openaiClient.NewClient(config)
-	imageBytes, err := client.CreateImage(context.Background(), openaiClient.ImageRequest{
-		Background:   normalizedRequest.Background,
-		Examples:     normalizedRequest.Examples,
-		Model:        normalizedRequest.Model,
+	imageBytes, err := client.CreateImage(context.Background(), &openaiClient.ImageRequest{
+		Background:   request.Background,
+		Examples:     request.Examples,
+		Model:        request.Model,
 		OutputFormat: outputFormat,
-		Prompt:       normalizedRequest.Prompt,
-		Quality:      normalizedRequest.Quality,
-		Size:         normalizedRequest.Size,
+		Prompt:       request.Prompt,
+		Quality:      request.Quality,
+		Size:         request.Size,
 	})
 	if err != nil {
 		return err
@@ -45,34 +45,43 @@ func RunImage(request ImageRequest, stdout io.Writer) error {
 		}
 	}
 
-	if err := ensureOutputDirectory(normalizedRequest.OutputPath); err != nil {
+	if err := ensureOutputDirectory(request.OutputPath); err != nil {
 		return err
 	}
-	if err := os.WriteFile(normalizedRequest.OutputPath, imageBytes, 0644); err != nil {
-		return fmt.Errorf("failed to write image output %q: %w", normalizedRequest.OutputPath, err)
+	if err := os.WriteFile(request.OutputPath, imageBytes, 0644); err != nil {
+		return fmt.Errorf("failed to write image output %q: %w", request.OutputPath, err)
 	}
 
-	_, _ = fmt.Fprintf(stdout, "Wrote %s\n", normalizedRequest.OutputPath)
+	_, _ = fmt.Fprintf(stdout, "Wrote %s\n", request.OutputPath)
 	return nil
 }
 
-func normalizeImageRequest(request ImageRequest) (ImageRequest, string, bool, error) {
+func normalizeImageRequest(request *ImageRequest) (string, bool, error) {
+	if request == nil {
+		return "", false, fmt.Errorf("cannot normalize image request because request is nil")
+	}
+
 	request.Model = strings.TrimSpace(request.Model)
 	if request.Model == "" {
 		request.Model = DefaultImageModel
 	}
 	if !isSupportedImageModel(request.Model) {
-		return ImageRequest{}, "", false, fmt.Errorf("unsupported image model %q: supported models are %q and %q", request.Model, ModelGPTImage2, ModelGPTImage15)
+		return "", false, fmt.Errorf(
+			"unsupported image model %q: supported models are %q and %q",
+			request.Model,
+			ModelGPTImage2,
+			ModelGPTImage15,
+		)
 	}
 
 	request.Prompt = strings.TrimSpace(request.Prompt)
 	if request.Prompt == "" {
-		return ImageRequest{}, "", false, fmt.Errorf("missing required --prompt value")
+		return "", false, fmt.Errorf("missing required --prompt value")
 	}
 
 	request.OutputPath = strings.TrimSpace(request.OutputPath)
 	if request.OutputPath == "" {
-		return ImageRequest{}, "", false, fmt.Errorf("missing required --out value")
+		return "", false, fmt.Errorf("missing required --out value")
 	}
 
 	request.Background = strings.ToLower(strings.TrimSpace(request.Background))
@@ -80,7 +89,13 @@ func normalizeImageRequest(request ImageRequest) (ImageRequest, string, bool, er
 		request.Background = BackgroundAuto
 	}
 	if !isSupportedBackground(request.Background) {
-		return ImageRequest{}, "", false, fmt.Errorf("unsupported --background %q: expected %q, %q, or %q", request.Background, BackgroundAuto, BackgroundOpaque, BackgroundTransparent)
+		return "", false, fmt.Errorf(
+			"unsupported --background %q: expected %q, %q, or %q",
+			request.Background,
+			BackgroundAuto,
+			BackgroundOpaque,
+			BackgroundTransparent,
+		)
 	}
 
 	request.Quality = strings.ToLower(strings.TrimSpace(request.Quality))
@@ -88,7 +103,7 @@ func normalizeImageRequest(request ImageRequest) (ImageRequest, string, bool, er
 		request.Quality = DefaultImageQuality
 	}
 	if !isSupportedQuality(request.Quality) {
-		return ImageRequest{}, "", false, fmt.Errorf("unsupported --quality %q: expected auto, low, medium, or high", request.Quality)
+		return "", false, fmt.Errorf("unsupported --quality %q: expected auto, low, medium, or high", request.Quality)
 	}
 
 	request.Size = strings.ToLower(strings.TrimSpace(request.Size))
@@ -96,16 +111,16 @@ func normalizeImageRequest(request ImageRequest) (ImageRequest, string, bool, er
 		request.Size = DefaultImageSize
 	}
 	if err := validateImageSize(request.Model, request.Size); err != nil {
-		return ImageRequest{}, "", false, err
+		return "", false, err
 	}
 
 	outputFormat, err := outputFormatFromPath(request.OutputPath)
 	if err != nil {
-		return ImageRequest{}, "", false, err
+		return "", false, err
 	}
 
-	if err := normalizeExampleReferences(&request); err != nil {
-		return ImageRequest{}, "", false, err
+	if err := normalizeExampleReferences(request); err != nil {
+		return "", false, err
 	}
 	if len(request.Examples) > 0 {
 		request.Prompt = appendExampleNotesPrompt(request.Prompt, request.Examples, request.ExampleNotes)
@@ -114,13 +129,16 @@ func normalizeImageRequest(request ImageRequest) (ImageRequest, string, bool, er
 	needsChromaTransparency := request.Model == ModelGPTImage2 && request.Background == BackgroundTransparent
 	if needsChromaTransparency {
 		if outputFormat != OutputFormatPNG {
-			return ImageRequest{}, "", false, fmt.Errorf("transparent output with %s requires a .png --out path because the chroma transparency post-processor writes PNG alpha", ModelGPTImage2)
+			return "", false, fmt.Errorf(
+				"transparent output with %s requires a .png --out path "+
+					"because the chroma transparency post-processor writes PNG alpha", ModelGPTImage2,
+			)
 		}
 		request.Background = BackgroundOpaque
 		request.Prompt = appendChromaPrompt(request.Prompt)
 	}
 
-	return request, outputFormat, needsChromaTransparency, nil
+	return outputFormat, needsChromaTransparency, nil
 }
 
 func normalizeExampleReferences(request *ImageRequest) error {
@@ -166,7 +184,13 @@ func appendExampleNotesPrompt(prompt string, examples []string, exampleNotes []s
 
 	for exampleIndex, examplePath := range examples {
 		builder.WriteString("\n")
-		builder.WriteString(fmt.Sprintf("- Reference file %d (%s): %s", exampleIndex+1, filepath.Base(examplePath), exampleNotes[exampleIndex]))
+		fmt.Fprintf(
+			&builder,
+			"- Reference file %d (%s): %s",
+			exampleIndex+1,
+			filepath.Base(examplePath),
+			exampleNotes[exampleIndex],
+		)
 	}
 
 	builder.WriteString("\nUse these notes when interpreting the provided image references.")

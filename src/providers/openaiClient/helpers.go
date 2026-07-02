@@ -49,23 +49,31 @@ func normalizeBaseURL(baseURL string) string {
 	return strings.TrimRight(trimmedBaseURL, "/")
 }
 
-func buildImageRequestBody(imageRequest ImageRequest) (io.Reader, string, string, func(), error) {
+func buildImageRequestBody(imageRequest *ImageRequest) (io.Reader, string, string, func(), error) {
+	if imageRequest == nil {
+		return nil, "", "", nil, fmt.Errorf("cannot build image request body because request is nil")
+	}
+
 	if len(imageRequest.Examples) == 0 {
 		requestBytes, err := buildGenerationJSONBody(imageRequest)
 		if err != nil {
-			return nil, "", "", func() {}, err
+			return nil, "", "", nil, err
 		}
 		return bytes.NewReader(requestBytes), "application/json", ImageGenerationsPath, func() {}, nil
 	}
 
 	requestBody, contentType, cleanup, err := buildEditMultipartBody(imageRequest)
 	if err != nil {
-		return nil, "", "", func() {}, err
+		return nil, "", "", nil, err
 	}
 	return requestBody, contentType, ImageEditsPath, cleanup, nil
 }
 
-func buildGenerationJSONBody(imageRequest ImageRequest) ([]byte, error) {
+func buildGenerationJSONBody(imageRequest *ImageRequest) ([]byte, error) {
+	if imageRequest == nil {
+		return nil, fmt.Errorf("cannot build image generation body because request is nil")
+	}
+
 	requestMap := map[string]string{
 		"model":         imageRequest.Model,
 		"output_format": imageRequest.OutputFormat,
@@ -84,7 +92,11 @@ func buildGenerationJSONBody(imageRequest ImageRequest) ([]byte, error) {
 	return requestBytes, nil
 }
 
-func buildEditMultipartBody(imageRequest ImageRequest) (io.Reader, string, func(), error) {
+func buildEditMultipartBody(imageRequest *ImageRequest) (io.Reader, string, func(), error) {
+	if imageRequest == nil {
+		return nil, "", func() {}, fmt.Errorf("cannot build image edit body because request is nil")
+	}
+
 	bodyBuffer := bytes.NewBuffer(nil)
 	multipartWriter := multipart.NewWriter(bodyBuffer)
 	openFiles := make([]*os.File, 0, len(imageRequest.Examples))

@@ -78,7 +78,7 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 		return fmt.Errorf("unexpected positional arguments: %s", strings.Join(imageFlags.Args(), " "))
 	}
 
-	request := appRunner.ImageRequest{
+	request := &appRunner.ImageRequest{
 		ConfigPath:   configPath,
 		ExampleNotes: []string(exampleNotes),
 		Examples:     []string(examples),
