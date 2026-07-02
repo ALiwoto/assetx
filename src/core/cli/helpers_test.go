@@ -17,6 +17,8 @@ func TestHelpCommandIncludesOperationalDetails(t *testing.T) {
 
 	helpText := stdout.String()
 	requiredSnippets := []string{
+		"image-generation providers",
+		"Currently implemented provider:",
 		"assetx help image",
 		"assetx help config",
 		"gpt-image-2",
@@ -28,6 +30,9 @@ func TestHelpCommandIncludesOperationalDetails(t *testing.T) {
 		if !strings.Contains(helpText, snippet) {
 			t.Fatalf("Expected help text to contain %q, but got:\n%s", snippet, helpText)
 		}
+	}
+	if strings.Contains(helpText, "with OpenAI image models") {
+		t.Fatalf("Expected provider-neutral root help, but got:\n%s", helpText)
 	}
 }
 
@@ -41,6 +46,9 @@ func TestImageHelpCommandExitsSuccessfully(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Transparency:") {
 		t.Fatalf("Expected image help to describe transparency, but got:\n%s", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "Repeat --example") {
+		t.Fatalf("Expected image help to describe multiple examples, but got:\n%s", stdout.String())
 	}
 }
 

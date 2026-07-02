@@ -55,7 +55,7 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 
 	imageFlags := flag.NewFlagSet("assetx image", flag.ContinueOnError)
 	imageFlags.SetOutput(stderr)
-	imageFlags.String("model", appRunner.DefaultImageModel, "OpenAI image model")
+	imageFlags.String("model", appRunner.DefaultImageModel, "image model")
 	imageFlags.String("background", appRunner.BackgroundAuto, "auto, opaque, or transparent")
 	imageFlags.String("prompt", "", "image prompt")
 	imageFlags.Var(&examples, "example", "input example image path; repeat for multiple examples")
