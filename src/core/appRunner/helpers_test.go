@@ -121,6 +121,36 @@ func TestNormalizeImageRequestRejectsNilRequest(t *testing.T) {
 	}
 }
 
+func TestNormalizeConvertTGSRequestRejectsNonPNGOutput(t *testing.T) {
+	inputPath := createTestExampleFile(t, "custom_emoji_1.tgs")
+
+	err := normalizeConvertTGSRequest(&ConvertTGSRequest{
+		InputPath:  inputPath,
+		OutputPath: "out.jpg",
+	})
+	if err == nil {
+		t.Fatal("Expected non-PNG output error, but got nil")
+	}
+	if !strings.Contains(err.Error(), ".png --out path") {
+		t.Fatalf("Expected PNG output error, but got %q", err.Error())
+	}
+}
+
+func TestNormalizeConvertTGSRequestDefaultsFFMPEGPath(t *testing.T) {
+	inputPath := createTestExampleFile(t, "custom_emoji_1.tgs")
+	request := &ConvertTGSRequest{
+		InputPath:  inputPath,
+		OutputPath: "out.png",
+	}
+
+	if err := normalizeConvertTGSRequest(request); err != nil {
+		t.Fatalf("normalizeConvertTGSRequest returned error: %v", err)
+	}
+	if request.FFMPEGPath != "ffmpeg" {
+		t.Fatalf("Expected default ffmpeg path, but got %q", request.FFMPEGPath)
+	}
+}
+
 func createTestExampleFile(t *testing.T, fileName string) string {
 	t.Helper()
 

@@ -17,6 +17,9 @@ func HandleHelpCommand(args []string, stdout io.Writer, stderr io.Writer) int {
 	}
 
 	switch args[0] {
+	case "convert-tgs":
+		PrintConvertTGSHelp(stdout)
+		return ExitSuccess
 	case "image":
 		PrintImageHelp(stdout)
 		return ExitSuccess

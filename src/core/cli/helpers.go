@@ -27,6 +27,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 	}
 
 	switch filteredArgs[0] {
+	case "convert-tgs":
+		if err := runConvertTGSCommand(filteredArgs[1:], stdout, stderr); err != nil {
+			_, _ = fmt.Fprintf(stderr, "assetx convert-tgs: %v\n", err)
+			return ExitFailure
+		}
+		return ExitSuccess
 	case "image":
 		if err := runImageCommand(filteredArgs[1:], configPath, stdout, stderr); err != nil {
 			_, _ = fmt.Fprintf(stderr, "assetx image: %v\n", err)
@@ -51,6 +57,46 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 		PrintRootHelp(stderr)
 		return ExitFailure
 	}
+}
+
+func runConvertTGSCommand(args []string, stdout io.Writer, stderr io.Writer) error {
+	if len(args) == 1 && isHelpCommand(args[0]) {
+		PrintConvertTGSHelp(stdout)
+		return nil
+	}
+
+	convertTGSFlags := flag.NewFlagSet("assetx convert-tgs", flag.ContinueOnError)
+	convertTGSFlags.SetOutput(stderr)
+	convertTGSFlags.String("in", "", "input Telegram .tgs or WebM emoji/sticker path")
+	convertTGSFlags.String("out", "", "output sprite PNG path")
+	convertTGSFlags.String("ffmpeg", imageProcessing.DefaultFFMPEGExecutable, "ffmpeg executable path")
+	convertTGSFlags.Usage = func() {
+		PrintConvertTGSHelp(stderr)
+	}
+
+	if err := convertTGSFlags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil
+		}
+		return err
+	}
+	if convertTGSFlags.NArg() != 0 {
+		return fmt.Errorf("unexpected positional arguments: %s", strings.Join(convertTGSFlags.Args(), " "))
+	}
+
+	request := &appRunner.ConvertTGSRequest{}
+	convertTGSFlags.VisitAll(func(flagValue *flag.Flag) {
+		switch flagValue.Name {
+		case "ffmpeg":
+			request.FFMPEGPath = flagValue.Value.String()
+		case "in":
+			request.InputPath = flagValue.Value.String()
+		case "out":
+			request.OutputPath = flagValue.Value.String()
+		}
+	})
+
+	return appRunner.RunConvertTGS(request, stdout)
 }
 
 func runRemoveBackgroundCommand(args []string, stdout io.Writer, stderr io.Writer) error {

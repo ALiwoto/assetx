@@ -13,6 +13,12 @@ type ImageRequest struct {
 	Size         string
 }
 
+type ConvertTGSRequest struct {
+	FFMPEGPath string
+	InputPath  string
+	OutputPath string
+}
+
 type RemoveBackgroundRequest struct {
 	Color      string
 	InputPath  string

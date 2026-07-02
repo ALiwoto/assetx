@@ -9,3 +9,5 @@ const ChromaRed = 0
 const ChromaDistanceTolerance = 180
 const ChromaDominanceTolerance = 35
 const ChromaMinimumGreen = 130
+
+const DefaultFFMPEGExecutable = "ffmpeg"
