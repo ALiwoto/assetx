@@ -12,3 +12,10 @@ type ImageRequest struct {
 	Quality      string
 	Size         string
 }
+
+type RemoveBackgroundRequest struct {
+	Color      string
+	InputPath  string
+	OutputPath string
+	Tolerance  int
+}

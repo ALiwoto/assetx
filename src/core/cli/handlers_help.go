@@ -20,6 +20,9 @@ func HandleHelpCommand(args []string, stdout io.Writer, stderr io.Writer) int {
 	case "image":
 		PrintImageHelp(stdout)
 		return ExitSuccess
+	case "remove-bg":
+		PrintRemoveBackgroundHelp(stdout)
+		return ExitSuccess
 	case "version":
 		PrintVersionHelp(stdout)
 		return ExitSuccess

@@ -1,12 +1,13 @@
 package cli
 
 import (
+	"assetx/src/core/imageProcessing"
 	"fmt"
 	"io"
 )
 
 func PrintRootHelp(writer io.Writer) {
-	_, _ = fmt.Fprintln(writer, "assetx - generate and adapt game assets multiple providers.")
+	_, _ = fmt.Fprintln(writer, "assetx - generate and adapt game assets with multiple providers.")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Usage:")
 	_, _ = fmt.Fprintln(writer, "  assetx [--config path/to/config.json] <command> [options]")
@@ -64,7 +65,7 @@ func PrintImageHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Transparency:")
 	_, _ = fmt.Fprintln(writer, "  gpt-image-1.5 can request transparent background directly.")
-	_, _ = fmt.Fprintln(writer, "  gpt-image-2 does not support direct transparency; assetx requests a chroma background and post-processes edge-connected green pixels into PNG alpha.")
+	_, _ = fmt.Fprintln(writer, "  gpt-image-2 does not support direct transparency; assetx requests a chroma background and post-processes matching chroma pixels into PNG alpha.")
 	_, _ = fmt.Fprintln(writer, "  gpt-image-2 transparent output requires --out ending in .png.")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Examples:")
@@ -86,6 +87,25 @@ func PrintConfigHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Proxy example:")
 	_, _ = fmt.Fprintln(writer, "  \"proxy_base_url\": \"https://main.purroxy.org/openai/v1\"")
+}
+
+func PrintRemoveBackgroundHelp(writer io.Writer) {
+	_, _ = fmt.Fprintln(writer, "assetx remove-bg - remove a solid color from an existing image and write a transparent PNG.")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Usage:")
+	_, _ = fmt.Fprintln(writer, "  assetx remove-bg --in path/to/source.png --out path/to/output.png [options]")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Required:")
+	_, _ = fmt.Fprintln(writer, "  --in path           Input image path")
+	_, _ = fmt.Fprintln(writer, "  --out path          Output path ending in .png")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Options:")
+	_, _ = fmt.Fprintf(writer, "  --color string      Hex color to remove, default %s\n", imageProcessing.ChromaHexColor)
+	_, _ = fmt.Fprintf(writer, "  --tolerance int     Sum RGB distance tolerance, default %d\n", imageProcessing.ChromaDistanceTolerance)
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Examples:")
+	_, _ = fmt.Fprintln(writer, "  assetx remove-bg --in tmp/chroma.png --out assets/icon.png")
+	_, _ = fmt.Fprintln(writer, "  assetx remove-bg --in tmp/source.jpg --out assets/icon.png --color \"#ff00ff\" --tolerance 120")
 }
 
 func PrintVersionHelp(writer io.Writer) {

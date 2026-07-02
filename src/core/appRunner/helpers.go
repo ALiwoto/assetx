@@ -56,6 +56,37 @@ func RunImage(request *ImageRequest, stdout io.Writer) error {
 	return nil
 }
 
+func RunRemoveBackground(request *RemoveBackgroundRequest, stdout io.Writer) error {
+	if err := normalizeRemoveBackgroundRequest(request); err != nil {
+		return err
+	}
+
+	targetColor, err := imageProcessing.ParseHexColor(request.Color)
+	if err != nil {
+		return err
+	}
+
+	imageBytes, err := os.ReadFile(request.InputPath)
+	if err != nil {
+		return fmt.Errorf("failed to read input image %q: %w", request.InputPath, err)
+	}
+
+	outputBytes, err := imageProcessing.RemoveColorTransparency(imageBytes, targetColor, request.Tolerance)
+	if err != nil {
+		return err
+	}
+
+	if err := ensureOutputDirectory(request.OutputPath); err != nil {
+		return err
+	}
+	if err := os.WriteFile(request.OutputPath, outputBytes, 0644); err != nil {
+		return fmt.Errorf("failed to write background-removed image %q: %w", request.OutputPath, err)
+	}
+
+	_, _ = fmt.Fprintf(stdout, "Wrote %s\n", request.OutputPath)
+	return nil
+}
+
 func normalizeImageRequest(request *ImageRequest) (string, bool, error) {
 	if request == nil {
 		return "", false, fmt.Errorf("cannot normalize image request because request is nil")
@@ -145,6 +176,42 @@ func normalizeImageRequest(request *ImageRequest) (string, bool, error) {
 	}
 
 	return outputFormat, needsChromaTransparency, nil
+}
+
+func normalizeRemoveBackgroundRequest(request *RemoveBackgroundRequest) error {
+	if request == nil {
+		return fmt.Errorf("cannot normalize remove-bg request because request is nil")
+	}
+
+	request.InputPath = strings.TrimSpace(request.InputPath)
+	if request.InputPath == "" {
+		return fmt.Errorf("missing required --in value")
+	}
+	if _, err := os.Stat(request.InputPath); err != nil {
+		return fmt.Errorf("failed to access --in %q: %w", request.InputPath, err)
+	}
+
+	request.OutputPath = strings.TrimSpace(request.OutputPath)
+	if request.OutputPath == "" {
+		return fmt.Errorf("missing required --out value")
+	}
+	if strings.ToLower(filepath.Ext(request.OutputPath)) != ".png" {
+		return fmt.Errorf("remove-bg requires a .png --out path because the output contains transparency")
+	}
+
+	request.Color = strings.TrimSpace(request.Color)
+	if request.Color == "" {
+		return fmt.Errorf("missing required --color value")
+	}
+	if _, err := imageProcessing.ParseHexColor(request.Color); err != nil {
+		return err
+	}
+
+	if request.Tolerance < 0 {
+		return fmt.Errorf("--tolerance cannot be negative, got %d", request.Tolerance)
+	}
+
+	return nil
 }
 
 func normalizeAvoids(request *ImageRequest) error {

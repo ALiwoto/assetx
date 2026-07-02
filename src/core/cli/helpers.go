@@ -2,10 +2,12 @@ package cli
 
 import (
 	"assetx/src/core/appRunner"
+	"assetx/src/core/imageProcessing"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -31,6 +33,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 			return ExitFailure
 		}
 		return ExitSuccess
+	case "remove-bg":
+		if err := runRemoveBackgroundCommand(filteredArgs[1:], stdout, stderr); err != nil {
+			_, _ = fmt.Fprintf(stderr, "assetx remove-bg: %v\n", err)
+			return ExitFailure
+		}
+		return ExitSuccess
 	case "version", "--version", "-v":
 		if len(filteredArgs) > 1 {
 			_, _ = fmt.Fprintf(stderr, "assetx version: unexpected arguments: %s\n", strings.Join(filteredArgs[1:], " "))
@@ -43,6 +51,52 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 		PrintRootHelp(stderr)
 		return ExitFailure
 	}
+}
+
+func runRemoveBackgroundCommand(args []string, stdout io.Writer, stderr io.Writer) error {
+	if len(args) == 1 && isHelpCommand(args[0]) {
+		PrintRemoveBackgroundHelp(stdout)
+		return nil
+	}
+
+	removeBackgroundFlags := flag.NewFlagSet("assetx remove-bg", flag.ContinueOnError)
+	removeBackgroundFlags.SetOutput(stderr)
+	removeBackgroundFlags.String("in", "", "input image path")
+	removeBackgroundFlags.String("out", "", "output PNG path")
+	removeBackgroundFlags.String("color", imageProcessing.ChromaHexColor, "hex color to remove, in #RRGGBB format")
+	removeBackgroundFlags.Int("tolerance", imageProcessing.ChromaDistanceTolerance, "sum RGB distance tolerance")
+	removeBackgroundFlags.Usage = func() {
+		PrintRemoveBackgroundHelp(stderr)
+	}
+
+	if err := removeBackgroundFlags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil
+		}
+		return err
+	}
+	if removeBackgroundFlags.NArg() != 0 {
+		return fmt.Errorf("unexpected positional arguments: %s", strings.Join(removeBackgroundFlags.Args(), " "))
+	}
+
+	request := &appRunner.RemoveBackgroundRequest{}
+	removeBackgroundFlags.VisitAll(func(flagValue *flag.Flag) {
+		switch flagValue.Name {
+		case "color":
+			request.Color = flagValue.Value.String()
+		case "in":
+			request.InputPath = flagValue.Value.String()
+		case "out":
+			request.OutputPath = flagValue.Value.String()
+		case "tolerance":
+			tolerance, err := strconv.Atoi(flagValue.Value.String())
+			if err == nil {
+				request.Tolerance = tolerance
+			}
+		}
+	})
+
+	return appRunner.RunRemoveBackground(request, stdout)
 }
 
 func runImageCommand(args []string, configPath string, stdout io.Writer, stderr io.Writer) error {

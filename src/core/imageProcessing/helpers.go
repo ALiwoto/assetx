@@ -6,22 +6,38 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	_ "image/jpeg"
 	"image/png"
+	"strconv"
+	"strings"
 )
 
 func ApplyChromaTransparency(imageBytes []byte) ([]byte, error) {
+	chromaColor, err := ParseHexColor(ChromaHexColor)
+	if err != nil {
+		return nil, err
+	}
+
+	return RemoveColorTransparency(imageBytes, chromaColor, ChromaDistanceTolerance)
+}
+
+func RemoveColorTransparency(imageBytes []byte, targetColor color.NRGBA, tolerance int) ([]byte, error) {
+	if tolerance < 0 {
+		return nil, fmt.Errorf("color removal tolerance cannot be negative, got %d", tolerance)
+	}
+
 	decodedImage, imageFormat, err := image.Decode(bytes.NewReader(imageBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode generated image for transparency post-processing: %w", err)
 	}
-	if imageFormat != "png" {
-		return nil, fmt.Errorf("transparent post-processing expected PNG output, but got %q", imageFormat)
+	if imageFormat == "" {
+		return nil, fmt.Errorf("failed to detect image format for transparency post-processing")
 	}
 
 	imageBounds := decodedImage.Bounds()
 	transparentImage := image.NewNRGBA(imageBounds)
 	draw.Draw(transparentImage, imageBounds, decodedImage, imageBounds.Min, draw.Src)
-	makeEdgeChromaTransparent(transparentImage)
+	makeMatchingPixelsTransparent(transparentImage, targetColor, tolerance)
 
 	output := bytes.NewBuffer(nil)
 	if err := png.Encode(output, transparentImage); err != nil {
@@ -31,54 +47,49 @@ func ApplyChromaTransparency(imageBytes []byte) ([]byte, error) {
 	return output.Bytes(), nil
 }
 
-func makeEdgeChromaTransparent(targetImage *image.NRGBA) {
+func ParseHexColor(hexColor string) (color.NRGBA, error) {
+	normalizedHexColor := strings.TrimSpace(hexColor)
+	normalizedHexColor = strings.TrimPrefix(normalizedHexColor, "#")
+	if len(normalizedHexColor) != 6 {
+		return color.NRGBA{}, fmt.Errorf("invalid color %q: expected #RRGGBB", hexColor)
+	}
+
+	red, err := parseHexColorComponent(normalizedHexColor[0:2], hexColor)
+	if err != nil {
+		return color.NRGBA{}, err
+	}
+	green, err := parseHexColorComponent(normalizedHexColor[2:4], hexColor)
+	if err != nil {
+		return color.NRGBA{}, err
+	}
+	blue, err := parseHexColorComponent(normalizedHexColor[4:6], hexColor)
+	if err != nil {
+		return color.NRGBA{}, err
+	}
+
+	return color.NRGBA{R: red, G: green, B: blue, A: 255}, nil
+}
+
+func makeMatchingPixelsTransparent(targetImage *image.NRGBA, targetColor color.NRGBA, tolerance int) {
 	bounds := targetImage.Bounds()
-	queue := make([]image.Point, 0, bounds.Dx()*2+bounds.Dy()*2)
-	visited := make(map[image.Point]bool, bounds.Dx()*bounds.Dy()/2)
-
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		enqueueChromaPoint(targetImage, image.Point{X: x, Y: bounds.Min.Y}, visited, &queue)
-		enqueueChromaPoint(targetImage, image.Point{X: x, Y: bounds.Max.Y - 1}, visited, &queue)
-	}
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		enqueueChromaPoint(targetImage, image.Point{X: bounds.Min.X, Y: y}, visited, &queue)
-		enqueueChromaPoint(targetImage, image.Point{X: bounds.Max.X - 1, Y: y}, visited, &queue)
-	}
-
-	for len(queue) > 0 {
-		point := queue[0]
-		queue = queue[1:]
-		setPointTransparent(targetImage, point)
-
-		enqueueChromaPoint(targetImage, image.Point{X: point.X + 1, Y: point.Y}, visited, &queue)
-		enqueueChromaPoint(targetImage, image.Point{X: point.X - 1, Y: point.Y}, visited, &queue)
-		enqueueChromaPoint(targetImage, image.Point{X: point.X, Y: point.Y + 1}, visited, &queue)
-		enqueueChromaPoint(targetImage, image.Point{X: point.X, Y: point.Y - 1}, visited, &queue)
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if isTargetColor(targetImage.NRGBAAt(x, y), targetColor, tolerance) {
+				setPointTransparent(targetImage, image.Point{X: x, Y: y})
+			}
+		}
 	}
 }
 
-func enqueueChromaPoint(targetImage *image.NRGBA, point image.Point, visited map[image.Point]bool, queue *[]image.Point) {
-	if !point.In(targetImage.Bounds()) || visited[point] {
-		return
-	}
-	visited[point] = true
-	if !isChromaColor(targetImage.NRGBAAt(point.X, point.Y)) {
-		return
-	}
-	*queue = append(*queue, point)
-}
-
-func isChromaColor(pixel color.NRGBA) bool {
-	redDistance := absInt(int(pixel.R) - ChromaRed)
-	greenDistance := absInt(int(pixel.G) - ChromaGreen)
-	blueDistance := absInt(int(pixel.B) - ChromaBlue)
-	if redDistance+greenDistance+blueDistance <= ChromaDistanceTolerance {
-		return true
+func isTargetColor(pixel color.NRGBA, targetColor color.NRGBA, tolerance int) bool {
+	if pixel.A == 0 {
+		return false
 	}
 
-	return int(pixel.G) >= ChromaMinimumGreen &&
-		int(pixel.G) > int(pixel.R)+ChromaDominanceTolerance &&
-		int(pixel.G) > int(pixel.B)+ChromaDominanceTolerance
+	redDistance := absInt(int(pixel.R) - int(targetColor.R))
+	greenDistance := absInt(int(pixel.G) - int(targetColor.G))
+	blueDistance := absInt(int(pixel.B) - int(targetColor.B))
+	return redDistance+greenDistance+blueDistance <= tolerance
 }
 
 func setPointTransparent(targetImage *image.NRGBA, point image.Point) {
@@ -92,4 +103,13 @@ func absInt(value int) int {
 		return -value
 	}
 	return value
+}
+
+func parseHexColorComponent(hexComponent string, originalHexColor string) (uint8, error) {
+	value, err := strconv.ParseUint(hexComponent, 16, 8)
+	if err != nil {
+		return 0, fmt.Errorf("invalid color %q: expected #RRGGBB", originalHexColor)
+	}
+
+	return uint8(value), nil
 }
