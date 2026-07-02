@@ -104,6 +104,13 @@ func normalizeImageRequest(request ImageRequest) (ImageRequest, string, bool, er
 		return ImageRequest{}, "", false, err
 	}
 
+	if err := normalizeExampleReferences(&request); err != nil {
+		return ImageRequest{}, "", false, err
+	}
+	if len(request.Examples) > 0 {
+		request.Prompt = appendExampleNotesPrompt(request.Prompt, request.Examples, request.ExampleNotes)
+	}
+
 	needsChromaTransparency := request.Model == ModelGPTImage2 && request.Background == BackgroundTransparent
 	if needsChromaTransparency {
 		if outputFormat != OutputFormatPNG {
@@ -113,16 +120,57 @@ func normalizeImageRequest(request ImageRequest) (ImageRequest, string, bool, er
 		request.Prompt = appendChromaPrompt(request.Prompt)
 	}
 
-	for _, examplePath := range request.Examples {
-		if strings.TrimSpace(examplePath) == "" {
-			return ImageRequest{}, "", false, fmt.Errorf("--example values cannot be empty")
+	return request, outputFormat, needsChromaTransparency, nil
+}
+
+func normalizeExampleReferences(request *ImageRequest) error {
+	if request == nil {
+		return fmt.Errorf("cannot normalize image examples because request is nil")
+	}
+
+	if len(request.Examples) == 0 {
+		if len(request.ExampleNotes) != 0 {
+			return fmt.Errorf("--example-note requires a matching --example")
 		}
-		if _, err := os.Stat(examplePath); err != nil {
-			return ImageRequest{}, "", false, fmt.Errorf("failed to access --example %q: %w", examplePath, err)
+		return nil
+	}
+
+	if len(request.ExampleNotes) != len(request.Examples) {
+		return fmt.Errorf("expected exactly one --example-note per --example, but got %d examples and %d notes", len(request.Examples), len(request.ExampleNotes))
+	}
+
+	for exampleIndex, examplePath := range request.Examples {
+		request.Examples[exampleIndex] = strings.TrimSpace(examplePath)
+		if request.Examples[exampleIndex] == "" {
+			return fmt.Errorf("--example values cannot be empty")
+		}
+		if _, err := os.Stat(request.Examples[exampleIndex]); err != nil {
+			return fmt.Errorf("failed to access --example %q: %w", request.Examples[exampleIndex], err)
 		}
 	}
 
-	return request, outputFormat, needsChromaTransparency, nil
+	for noteIndex, exampleNote := range request.ExampleNotes {
+		request.ExampleNotes[noteIndex] = strings.TrimSpace(exampleNote)
+		if request.ExampleNotes[noteIndex] == "" {
+			return fmt.Errorf("--example-note values cannot be empty")
+		}
+	}
+
+	return nil
+}
+
+func appendExampleNotesPrompt(prompt string, examples []string, exampleNotes []string) string {
+	var builder strings.Builder
+	builder.WriteString(prompt)
+	builder.WriteString("\n\nProvided image reference notes:")
+
+	for exampleIndex, examplePath := range examples {
+		builder.WriteString("\n")
+		builder.WriteString(fmt.Sprintf("- Reference file %d (%s): %s", exampleIndex+1, filepath.Base(examplePath), exampleNotes[exampleIndex]))
+	}
+
+	builder.WriteString("\nUse these notes when interpreting the provided image references.")
+	return builder.String()
 }
 
 func isSupportedImageModel(model string) bool {

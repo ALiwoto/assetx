@@ -51,6 +51,7 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 		return nil
 	}
 
+	var exampleNotes repeatedStringFlag
 	var examples repeatedStringFlag
 
 	imageFlags := flag.NewFlagSet("assetx image", flag.ContinueOnError)
@@ -59,6 +60,7 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 	imageFlags.String("background", appRunner.BackgroundAuto, "auto, opaque, or transparent")
 	imageFlags.String("prompt", "", "image prompt")
 	imageFlags.Var(&examples, "example", "input example image path; repeat for multiple examples")
+	imageFlags.Var(&exampleNotes, "example-note", "description for the matching --example; repeat once per --example")
 	imageFlags.String("quality", appRunner.DefaultImageQuality, "auto, low, medium, or high")
 	imageFlags.String("size", appRunner.DefaultImageSize, "auto or WIDTHxHEIGHT")
 	imageFlags.String("out", "", "output image path")
@@ -77,8 +79,9 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 	}
 
 	request := appRunner.ImageRequest{
-		ConfigPath: configPath,
-		Examples:   []string(examples),
+		ConfigPath:   configPath,
+		ExampleNotes: []string(exampleNotes),
+		Examples:     []string(examples),
 	}
 	imageFlags.VisitAll(func(flagValue *flag.Flag) {
 		switch flagValue.Name {
