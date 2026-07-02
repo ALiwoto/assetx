@@ -10,7 +10,7 @@ func TestNormalizeConfigAllowsEmptyProxyAndDecodesBase64APIKey(t *testing.T) {
 	rawAPIKey := "sk-test-key"
 	encodedAPIKey := base64.StdEncoding.EncodeToString([]byte(rawAPIKey))
 
-	config, err := NormalizeConfig(AssetxConfig{
+	config, err := NormalizeConfig(&AssetxConfig{
 		ProxyBaseURL: "",
 		APIKey:       APIKeyBase64Prefix + encodedAPIKey,
 	}, "test-config.json")
@@ -49,7 +49,7 @@ func TestDecodeAPIKeyRejectsInvalidBase64(t *testing.T) {
 }
 
 func TestNormalizeConfigReturnsNilConfigOnError(t *testing.T) {
-	config, err := NormalizeConfig(AssetxConfig{
+	config, err := NormalizeConfig(&AssetxConfig{
 		APIKey: APIKeyBase64Prefix + "not base64",
 	}, "test-config.json")
 	if err == nil {
@@ -57,6 +57,19 @@ func TestNormalizeConfigReturnsNilConfigOnError(t *testing.T) {
 	}
 	if config != nil {
 		t.Fatalf("Expected nil config on error, but got %#v", config)
+	}
+}
+
+func TestNormalizeConfigRejectsNilConfig(t *testing.T) {
+	config, err := NormalizeConfig(nil, "test-config.json")
+	if err == nil {
+		t.Fatal("Expected nil config error, but got nil")
+	}
+	if config != nil {
+		t.Fatalf("Expected nil config on error, but got %#v", config)
+	}
+	if !strings.Contains(err.Error(), "config is nil") {
+		t.Fatalf("Expected nil config error, but got %q", err.Error())
 	}
 }
 

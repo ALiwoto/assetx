@@ -2,6 +2,7 @@ package cli
 
 import (
 	"assetx/src/core/appRunner"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,9 +16,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 		return ExitFailure
 	}
 
-	if len(filteredArgs) == 0 || filteredArgs[0] == "-h" || filteredArgs[0] == "--help" {
-		printRootUsage(stdout)
+	if len(filteredArgs) == 0 {
+		PrintRootHelp(stdout)
 		return ExitSuccess
+	}
+	if isHelpCommand(filteredArgs[0]) {
+		return HandleHelpCommand(filteredArgs[1:], stdout, stderr)
 	}
 
 	switch filteredArgs[0] {
@@ -27,14 +31,26 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 			return ExitFailure
 		}
 		return ExitSuccess
+	case "version", "--version", "-v":
+		if len(filteredArgs) > 1 {
+			_, _ = fmt.Fprintf(stderr, "assetx version: unexpected arguments: %s\n", strings.Join(filteredArgs[1:], " "))
+			return ExitFailure
+		}
+		HandleVersionCommand(stdout)
+		return ExitSuccess
 	default:
 		_, _ = fmt.Fprintf(stderr, "assetx: unknown command %q\n", filteredArgs[0])
-		printRootUsage(stderr)
+		PrintRootHelp(stderr)
 		return ExitFailure
 	}
 }
 
 func runImageCommand(args []string, configPath string, stdout io.Writer, stderr io.Writer) error {
+	if len(args) == 1 && isHelpCommand(args[0]) {
+		PrintImageHelp(stdout)
+		return nil
+	}
+
 	var examples repeatedStringFlag
 
 	imageFlags := flag.NewFlagSet("assetx image", flag.ContinueOnError)
@@ -47,10 +63,13 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 	imageFlags.String("size", appRunner.DefaultImageSize, "auto or WIDTHxHEIGHT")
 	imageFlags.String("out", "", "output image path")
 	imageFlags.Usage = func() {
-		printImageUsage(stderr)
+		PrintImageHelp(stderr)
 	}
 
 	if err := imageFlags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil
+		}
 		return err
 	}
 	if imageFlags.NArg() != 0 {
@@ -108,15 +127,6 @@ func extractConfigFlag(args []string) ([]string, string, error) {
 	return filteredArgs, configPath, nil
 }
 
-func printRootUsage(writer io.Writer) {
-	_, _ = fmt.Fprintln(writer, "Usage:")
-	_, _ = fmt.Fprintln(writer, "  assetx [--config path/to/config.json] image --prompt \"...\" --out assets/image.png [options]")
-	_, _ = fmt.Fprintln(writer)
-	_, _ = fmt.Fprintln(writer, "Commands:")
-	_, _ = fmt.Fprintln(writer, "  image    Generate or edit an image asset")
-}
-
-func printImageUsage(writer io.Writer) {
-	_, _ = fmt.Fprintln(writer, "Usage:")
-	_, _ = fmt.Fprintln(writer, "  assetx image --model gpt-image-2 --background transparent --prompt \"create a battle win header\" --example example1.png --quality medium --size 1024x1024 --out assets/sprites/slime.png")
+func isHelpCommand(command string) bool {
+	return command == "help" || command == "-h" || command == "--help"
 }

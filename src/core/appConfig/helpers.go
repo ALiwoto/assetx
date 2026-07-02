@@ -51,6 +51,10 @@ func LoadConfig(configPath string) (*AssetxConfig, error) {
 }
 
 func NormalizeConfig(config *AssetxConfig, configPath string) (*AssetxConfig, error) {
+	if config == nil {
+		return nil, fmt.Errorf("config file %q could not be normalized because config is nil", configPath)
+	}
+
 	config.ProxyBaseURL = strings.TrimSpace(config.ProxyBaseURL)
 
 	decodedAPIKey, err := DecodeAPIKey(config.APIKey, configPath)
