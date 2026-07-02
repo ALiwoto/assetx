@@ -51,6 +51,7 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 		return nil
 	}
 
+	var avoids repeatedStringFlag
 	var exampleNotes repeatedStringFlag
 	var examples repeatedStringFlag
 
@@ -59,6 +60,7 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 	imageFlags.String("model", appRunner.DefaultImageModel, "image model")
 	imageFlags.String("background", appRunner.BackgroundAuto, "auto, opaque, or transparent")
 	imageFlags.String("prompt", "", "image prompt")
+	imageFlags.Var(&avoids, "avoid", "thing to avoid in the generated image; repeat for multiple avoid items")
 	imageFlags.Var(&examples, "example", "input example image path; repeat for multiple examples")
 	imageFlags.Var(&exampleNotes, "example-note", "description for the matching --example; repeat once per --example")
 	imageFlags.String("quality", appRunner.DefaultImageQuality, "auto, low, medium, or high")
@@ -79,6 +81,7 @@ func runImageCommand(args []string, configPath string, stdout io.Writer, stderr 
 	}
 
 	request := &appRunner.ImageRequest{
+		Avoids:       []string(avoids),
 		ConfigPath:   configPath,
 		ExampleNotes: []string(exampleNotes),
 		Examples:     []string(examples),

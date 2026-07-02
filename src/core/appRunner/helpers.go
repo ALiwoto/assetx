@@ -125,6 +125,12 @@ func normalizeImageRequest(request *ImageRequest) (string, bool, error) {
 	if len(request.Examples) > 0 {
 		request.Prompt = appendExampleNotesPrompt(request.Prompt, request.Examples, request.ExampleNotes)
 	}
+	if err := normalizeAvoids(request); err != nil {
+		return "", false, err
+	}
+	if len(request.Avoids) > 0 {
+		request.Prompt = appendAvoidsPrompt(request.Prompt, request.Avoids)
+	}
 
 	needsChromaTransparency := request.Model == ModelGPTImage2 && request.Background == BackgroundTransparent
 	if needsChromaTransparency {
@@ -139,6 +145,21 @@ func normalizeImageRequest(request *ImageRequest) (string, bool, error) {
 	}
 
 	return outputFormat, needsChromaTransparency, nil
+}
+
+func normalizeAvoids(request *ImageRequest) error {
+	if request == nil {
+		return fmt.Errorf("cannot normalize image avoid list because request is nil")
+	}
+
+	for avoidIndex, avoid := range request.Avoids {
+		request.Avoids[avoidIndex] = strings.TrimSpace(avoid)
+		if request.Avoids[avoidIndex] == "" {
+			return fmt.Errorf("--avoid values cannot be empty")
+		}
+	}
+
+	return nil
 }
 
 func normalizeExampleReferences(request *ImageRequest) error {
@@ -175,6 +196,19 @@ func normalizeExampleReferences(request *ImageRequest) error {
 	}
 
 	return nil
+}
+
+func appendAvoidsPrompt(prompt string, avoids []string) string {
+	var builder strings.Builder
+	builder.WriteString(prompt)
+	builder.WriteString("\n\nAvoid:")
+
+	for _, avoid := range avoids {
+		builder.WriteString("\n- ")
+		builder.WriteString(avoid)
+	}
+
+	return builder.String()
 }
 
 func appendExampleNotesPrompt(prompt string, examples []string, exampleNotes []string) string {

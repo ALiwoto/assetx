@@ -6,7 +6,7 @@ import (
 )
 
 func PrintRootHelp(writer io.Writer) {
-	_, _ = fmt.Fprintln(writer, "assetx - generate and adapt game assets with image-generation providers.")
+	_, _ = fmt.Fprintln(writer, "assetx - generate and adapt game assets multiple providers.")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Usage:")
 	_, _ = fmt.Fprintln(writer, "  assetx [--config path/to/config.json] <command> [options]")
@@ -27,7 +27,7 @@ func PrintRootHelp(writer io.Writer) {
 	PrintConfigSummary(writer)
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Example:")
-	_, _ = fmt.Fprintln(writer, "  assetx image --model gpt-image-2 --background transparent --prompt \"create a battle win header\" --example example1.png --example-note \"screenshot of my game\" --example example2.png --example-note \"existing UI asset style reference\" --quality medium --size 1024x1024 --out assets/sprites/slime.png")
+	_, _ = fmt.Fprintln(writer, "  assetx image --model gpt-image-2 --background transparent --prompt \"create a battle win header\" --example example1.png --example-note \"screenshot of my game\" --example example2.png --example-note \"existing UI asset style reference\" --quality medium --size 1024x1024 --out assets/sprites/header.png")
 }
 
 func PrintImageHelp(writer io.Writer) {
@@ -42,6 +42,7 @@ func PrintImageHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Options:")
 	_, _ = fmt.Fprintln(writer, "  --model string         gpt-image-2 or gpt-image-1.5 (default: gpt-image-2)")
+	_, _ = fmt.Fprintln(writer, "  --avoid string         Thing to avoid in the image; repeat for multiple avoid items")
 	_, _ = fmt.Fprintln(writer, "  --background string    auto, opaque, or transparent (default: auto)")
 	_, _ = fmt.Fprintln(writer, "  --example path         Example/input image path; repeat for multiple examples")
 	_, _ = fmt.Fprintln(writer, "  --example-note string  Required note for the matching --example; repeat once per --example")
@@ -58,6 +59,9 @@ func PrintImageHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "  assetx appends those notes to the prompt as a structured reference-notes section.")
 	_, _ = fmt.Fprintln(writer, "  The current OpenAI provider sends examples to the image edit endpoint as repeated image[] parts.")
 	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Avoid list:")
+	_, _ = fmt.Fprintln(writer, "  Repeat --avoid for negative constraints. assetx appends them to the prompt as an Avoid section.")
+	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Transparency:")
 	_, _ = fmt.Fprintln(writer, "  gpt-image-1.5 can request transparent background directly.")
 	_, _ = fmt.Fprintln(writer, "  gpt-image-2 does not support direct transparency; assetx requests a chroma background and post-processes edge-connected green pixels into PNG alpha.")
@@ -65,7 +69,7 @@ func PrintImageHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Examples:")
 	_, _ = fmt.Fprintln(writer, "  assetx image --prompt \"16x16 slime sprite, idle frame\" --out assets/sprites/slime.png")
-	_, _ = fmt.Fprintln(writer, "  assetx image --model gpt-image-2 --background transparent --prompt \"battle win header\" --quality medium --size 1024x1024 --out assets/ui/battle_win.png")
+	_, _ = fmt.Fprintln(writer, "  assetx image --model gpt-image-2 --background transparent --prompt \"battle win header\" --avoid watermark --avoid \"text artifacts\" --quality medium --size 1024x1024 --out assets/ui/battle_win.png")
 	_, _ = fmt.Fprintln(writer, "  assetx image --model gpt-image-1.5 --background transparent --prompt \"match this style\" --example refs/style.png --example-note \"existing asset style reference\" --example refs/screenshot.jpg --example-note \"screenshot of the target game scene\" --out assets/icons/gem.png")
 }
 

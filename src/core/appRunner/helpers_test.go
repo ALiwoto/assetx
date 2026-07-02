@@ -71,6 +71,46 @@ func TestNormalizeImageRequestAppendsExampleNotesToPrompt(t *testing.T) {
 	}
 }
 
+func TestNormalizeImageRequestAppendsAvoidsToPrompt(t *testing.T) {
+	request := &ImageRequest{
+		Avoids: []string{
+			"watermark",
+			"photorealistic style",
+		},
+		OutputPath: "out.png",
+		Prompt:     "make a pixel art sword",
+	}
+	_, _, err := normalizeImageRequest(request)
+	if err != nil {
+		t.Fatalf("normalizeImageRequest returned error: %v", err)
+	}
+
+	expectedSnippets := []string{
+		"Avoid:",
+		"- watermark",
+		"- photorealistic style",
+	}
+	for _, expectedSnippet := range expectedSnippets {
+		if !strings.Contains(request.Prompt, expectedSnippet) {
+			t.Fatalf("Expected prompt to contain %q, but got:\n%s", expectedSnippet, request.Prompt)
+		}
+	}
+}
+
+func TestNormalizeImageRequestRejectsEmptyAvoid(t *testing.T) {
+	_, _, err := normalizeImageRequest(&ImageRequest{
+		Avoids:     []string{" "},
+		OutputPath: "out.png",
+		Prompt:     "make an icon",
+	})
+	if err == nil {
+		t.Fatal("Expected empty avoid error, but got nil")
+	}
+	if !strings.Contains(err.Error(), "--avoid values cannot be empty") {
+		t.Fatalf("Expected empty avoid error, but got %q", err.Error())
+	}
+}
+
 func TestNormalizeImageRequestRejectsNilRequest(t *testing.T) {
 	_, _, err := normalizeImageRequest(nil)
 	if err == nil {

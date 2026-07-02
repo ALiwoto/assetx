@@ -1,6 +1,7 @@
 package appRunner
 
 type ImageRequest struct {
+	Avoids       []string
 	Background   string
 	ConfigPath   string
 	ExampleNotes []string
