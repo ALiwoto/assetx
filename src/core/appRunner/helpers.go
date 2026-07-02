@@ -3,7 +3,7 @@ package appRunner
 import (
 	"assetx/src/core/appConfig"
 	"assetx/src/core/imageProcessing"
-	"assetx/src/core/openaiClient"
+	"assetx/src/providers/openaiClient"
 	"context"
 	"fmt"
 	"io"

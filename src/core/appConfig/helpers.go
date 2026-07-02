@@ -1,6 +1,7 @@
 package appConfig
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -18,38 +19,80 @@ func DefaultConfigFilePath() (string, error) {
 	return filepath.Join(homeDir, DefaultConfigRelativePath), nil
 }
 
-func LoadConfig(configPath string) (AssetxConfig, error) {
+func LoadConfig(configPath string) (*AssetxConfig, error) {
 	if strings.TrimSpace(configPath) == "" {
 		defaultPath, err := DefaultConfigFilePath()
 		if err != nil {
-			return AssetxConfig{}, err
+			return nil, err
 		}
 		configPath = defaultPath
 	}
 
 	configBytes, err := os.ReadFile(configPath)
 	if err != nil {
-		return AssetxConfig{}, fmt.Errorf("failed to read config file %q: %w", configPath, err)
+		return nil, fmt.Errorf("failed to read config file %q: %w", configPath, err)
 	}
 
-	var config AssetxConfig
-	if err := json.Unmarshal(configBytes, &config); err != nil {
-		return AssetxConfig{}, fmt.Errorf("failed to parse config file %q as JSON: %w", configPath, err)
+	var config = new(AssetxConfig)
+	if err := json.Unmarshal(configBytes, config); err != nil {
+		return nil, fmt.Errorf("failed to parse config file %q as JSON: %w", configPath, err)
 	}
 
-	if err := ValidateConfig(config, configPath); err != nil {
-		return AssetxConfig{}, err
+	normalizedConfig, err := NormalizeConfig(config, configPath)
+	if err != nil {
+		return nil, err
 	}
+
+	if err := ValidateConfig(normalizedConfig, configPath); err != nil {
+		return nil, err
+	}
+
+	return normalizedConfig, nil
+}
+
+func NormalizeConfig(config *AssetxConfig, configPath string) (*AssetxConfig, error) {
+	config.ProxyBaseURL = strings.TrimSpace(config.ProxyBaseURL)
+
+	decodedAPIKey, err := DecodeAPIKey(config.APIKey, configPath)
+	if err != nil {
+		return nil, err
+	}
+	config.APIKey = decodedAPIKey
 
 	return config, nil
 }
 
-func ValidateConfig(config AssetxConfig, configPath string) error {
-	if strings.TrimSpace(config.ProxyBaseURL) == "" {
-		return fmt.Errorf("config file %q is missing required field %q", configPath, "proxy_base_url")
+func DecodeAPIKey(apiKey string, configPath string) (string, error) {
+	trimmedAPIKey := strings.TrimSpace(apiKey)
+	if !strings.HasPrefix(trimmedAPIKey, APIKeyBase64Prefix) {
+		return trimmedAPIKey, nil
 	}
+
+	encodedAPIKey := strings.TrimSpace(strings.TrimPrefix(trimmedAPIKey, APIKeyBase64Prefix))
+	decodedAPIKeyBytes, err := base64.StdEncoding.DecodeString(encodedAPIKey)
+	if err != nil {
+		return "", fmt.Errorf("config file %q has invalid base64 api_key after %q prefix: %w", configPath, APIKeyBase64Prefix, err)
+	}
+
+	decodedAPIKey := strings.TrimSpace(string(decodedAPIKeyBytes))
+	if decodedAPIKey == "" {
+		return "", fmt.Errorf("config file %q has empty api_key after %q base64 decoding", configPath, APIKeyBase64Prefix)
+	}
+
+	return decodedAPIKey, nil
+}
+
+func ValidateConfig(config *AssetxConfig, configPath string) error {
+	if config == nil {
+		return fmt.Errorf("config file %q could not be validated because config is nil", configPath)
+	}
+
 	if strings.TrimSpace(config.APIKey) == "" {
 		return fmt.Errorf("config file %q is missing required field %q", configPath, "api_key")
+	}
+
+	if strings.TrimSpace(config.ProxyBaseURL) == "" {
+		return nil
 	}
 
 	parsedURL, err := url.ParseRequestURI(config.ProxyBaseURL)

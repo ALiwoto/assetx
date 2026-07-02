@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-func NewClient(config appConfig.AssetxConfig) Client {
+func NewClient(config *appConfig.AssetxConfig) Client {
 	return Client{
 		APIKey:  strings.TrimSpace(config.APIKey),
 		BaseURL: normalizeBaseURL(config.ProxyBaseURL),
@@ -28,12 +28,20 @@ func imageEndpoint(baseURL string, endpointPath string) string {
 
 func normalizeBaseURL(baseURL string) string {
 	trimmedBaseURL := strings.TrimSpace(baseURL)
+	if trimmedBaseURL == "" {
+		return DefaultOpenAIBaseURL
+	}
+
 	parsedURL, err := url.Parse(trimmedBaseURL)
 	if err != nil {
 		return strings.TrimRight(trimmedBaseURL, "/")
 	}
 
 	if parsedURL.Path == "" || parsedURL.Path == "/" {
+		if strings.EqualFold(parsedURL.Host, "api.openai.com") {
+			parsedURL.Path = "/v1"
+			return strings.TrimRight(parsedURL.String(), "/")
+		}
 		parsedURL.Path = "/openai/v1"
 		return strings.TrimRight(parsedURL.String(), "/")
 	}
