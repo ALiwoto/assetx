@@ -1,4 +1,4 @@
-package imageProcessing
+package tgsConverter
 
 import (
 	"bytes"

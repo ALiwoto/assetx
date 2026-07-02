@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"assetx/src/converters/tgsConverter"
 	"assetx/src/core/imageProcessing"
 	"fmt"
 	"io"
@@ -122,10 +123,11 @@ func PrintConvertTGSHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "  --out path          Output path ending in .png")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Options:")
-	_, _ = fmt.Fprintf(writer, "  --ffmpeg path       ffmpeg executable path, default %s\n", imageProcessing.DefaultFFMPEGExecutable)
+	_, _ = fmt.Fprintf(writer, "  --ffmpeg path       ffmpeg executable path, default %s\n", tgsConverter.DefaultFFMPEGExecutable)
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Behavior:")
 	_, _ = fmt.Fprintln(writer, "  WebM/VP9 Telegram emoji and stickers are extracted into PNG frames and packed into a sprite sheet.")
+	_, _ = fmt.Fprintln(writer, "  Frames are placed left-to-right across each row, then top-to-bottom into the next row.")
 	_, _ = fmt.Fprintln(writer, "  Gzip-compressed Lottie .tgs files are detected and rejected with a clear error because they need a Lottie renderer.")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Examples:")

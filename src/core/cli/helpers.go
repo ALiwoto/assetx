@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"assetx/src/converters/tgsConverter"
 	"assetx/src/core/appRunner"
 	"assetx/src/core/imageProcessing"
 	"errors"
@@ -69,7 +70,7 @@ func runConvertTGSCommand(args []string, stdout io.Writer, stderr io.Writer) err
 	convertTGSFlags.SetOutput(stderr)
 	convertTGSFlags.String("in", "", "input Telegram .tgs or WebM emoji/sticker path")
 	convertTGSFlags.String("out", "", "output sprite PNG path")
-	convertTGSFlags.String("ffmpeg", imageProcessing.DefaultFFMPEGExecutable, "ffmpeg executable path")
+	convertTGSFlags.String("ffmpeg", tgsConverter.DefaultFFMPEGExecutable, "ffmpeg executable path")
 	convertTGSFlags.Usage = func() {
 		PrintConvertTGSHelp(stderr)
 	}

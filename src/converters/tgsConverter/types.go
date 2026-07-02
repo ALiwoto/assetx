@@ -1,4 +1,4 @@
-package imageProcessing
+package tgsConverter
 
 type ConvertTGSOptions struct {
 	FFMPEGPath string

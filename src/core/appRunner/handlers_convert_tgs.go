@@ -1,7 +1,7 @@
 package appRunner
 
 import (
-	"assetx/src/core/imageProcessing"
+	"assetx/src/converters/tgsConverter"
 	"context"
 	"fmt"
 	"io"
@@ -16,7 +16,7 @@ func RunConvertTGS(request *ConvertTGSRequest, stdout io.Writer) error {
 		return err
 	}
 
-	if err := imageProcessing.ConvertTGSToSpritePNG(context.Background(), imageProcessing.ConvertTGSOptions{
+	if err := tgsConverter.ConvertTGSToSpritePNG(context.Background(), tgsConverter.ConvertTGSOptions{
 		FFMPEGPath: request.FFMPEGPath,
 		InputPath:  request.InputPath,
 		OutputPath: request.OutputPath,

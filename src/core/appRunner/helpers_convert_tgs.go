@@ -1,7 +1,7 @@
 package appRunner
 
 import (
-	"assetx/src/core/imageProcessing"
+	"assetx/src/converters/tgsConverter"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,7 +15,7 @@ func normalizeConvertTGSRequest(request *ConvertTGSRequest) error {
 
 	request.FFMPEGPath = strings.TrimSpace(request.FFMPEGPath)
 	if request.FFMPEGPath == "" {
-		request.FFMPEGPath = imageProcessing.DefaultFFMPEGExecutable
+		request.FFMPEGPath = tgsConverter.DefaultFFMPEGExecutable
 	}
 
 	request.InputPath = strings.TrimSpace(request.InputPath)
