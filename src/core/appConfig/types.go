@@ -1,5 +1,6 @@
 package appConfig
 
 type AssetxConfig struct {
-	ProxyBaseUrl string `json:"proxy_base_url"`
+	ProxyBaseURL string `json:"proxy_base_url"`
+	APIKey       string `json:"api_key"`
 }
