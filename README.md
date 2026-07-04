@@ -14,3 +14,10 @@ Convert a Telegram WebM/VP9 emoji or sticker file into a PNG sprite sheet:
 assetx convert-tgs --in "input_file.tgs" --out "output_file.png"
 ```
 
+Convert a WebP image into PNG:
+
+```bash
+assetx convert-webp --in "input_file.webp" --out "output_file.png"
+assetx convert-webp "input_file.webp"
+```
+

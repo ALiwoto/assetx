@@ -20,6 +20,9 @@ func HandleHelpCommand(args []string, stdout io.Writer, stderr io.Writer) int {
 	case "convert-tgs":
 		PrintConvertTGSHelp(stdout)
 		return ExitSuccess
+	case "convert-webp":
+		PrintConvertWEBPHelp(stdout)
+		return ExitSuccess
 	case "image":
 		PrintImageHelp(stdout)
 		return ExitSuccess

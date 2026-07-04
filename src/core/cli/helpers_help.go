@@ -17,6 +17,7 @@ func PrintRootHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "  image        Generate or edit an image asset")
 	_, _ = fmt.Fprintln(writer, "  remove-bg    Remove a solid background color from an image")
 	_, _ = fmt.Fprintln(writer, "  convert-tgs  Convert a Telegram emoji/sticker file to a sprite PNG")
+	_, _ = fmt.Fprintln(writer, "  convert-webp Convert a WebP image to PNG")
 	_, _ = fmt.Fprintln(writer, "  help         Show help for assetx or a command")
 	_, _ = fmt.Fprintln(writer, "  version      Print version, target platform, commit, and commit date")
 	_, _ = fmt.Fprintln(writer)
@@ -26,6 +27,7 @@ func PrintRootHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "Common help:")
 	_, _ = fmt.Fprintln(writer, "  assetx help image")
 	_, _ = fmt.Fprintln(writer, "  assetx help convert-tgs")
+	_, _ = fmt.Fprintln(writer, "  assetx help convert-webp")
 	_, _ = fmt.Fprintln(writer, "  assetx help config")
 	_, _ = fmt.Fprintln(writer, "  assetx image --help")
 	_, _ = fmt.Fprintln(writer)
@@ -133,6 +135,27 @@ func PrintConvertTGSHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "Examples:")
 	_, _ = fmt.Fprintln(writer, "  assetx convert-tgs --in experiment_files/tgs/custom_emoji_1.tgs --out experiment_files/tgs/custom_emoji_1.png")
 	_, _ = fmt.Fprintln(writer, "  assetx convert-tgs --ffmpeg C:/tools/ffmpeg/bin/ffmpeg.exe --in custom_emoji.tgs --out custom_emoji.png")
+}
+
+func PrintConvertWEBPHelp(writer io.Writer) {
+	_, _ = fmt.Fprintln(writer, "assetx convert-webp - convert a WebP image to PNG.")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Usage:")
+	_, _ = fmt.Fprintln(writer, "  assetx convert-webp --in path/to/input.webp [--out path/to/output.png]")
+	_, _ = fmt.Fprintln(writer, "  assetx convert-webp path/to/input.webp")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Required:")
+	_, _ = fmt.Fprintln(writer, "  --in path           Input .webp image path, or provide the input as one positional argument")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Options:")
+	_, _ = fmt.Fprintln(writer, "  --out path          Output path ending in .png; default is input path plus .png")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Behavior:")
+	_, _ = fmt.Fprintln(writer, "  WebP files are decoded in Go and written as PNG, so ffmpeg is not required for this command.")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Examples:")
+	_, _ = fmt.Fprintln(writer, "  assetx convert-webp --in experiment_files/webp/1275db07d.f6c1d.webp --out experiment_files/webp/1275db07d.f6c1d.png")
+	_, _ = fmt.Fprintln(writer, "  assetx convert-webp experiment_files/webp/1275db07d.f6c1d.webp")
 }
 
 func PrintVersionHelp(writer io.Writer) {

@@ -34,6 +34,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 			return ExitFailure
 		}
 		return ExitSuccess
+	case "convert-webp":
+		if err := runConvertWEBPCommand(filteredArgs[1:], stdout, stderr); err != nil {
+			_, _ = fmt.Fprintf(stderr, "assetx convert-webp: %v\n", err)
+			return ExitFailure
+		}
+		return ExitSuccess
 	case "image":
 		if err := runImageCommand(filteredArgs[1:], configPath, stdout, stderr); err != nil {
 			_, _ = fmt.Fprintf(stderr, "assetx image: %v\n", err)
@@ -98,6 +104,50 @@ func runConvertTGSCommand(args []string, stdout io.Writer, stderr io.Writer) err
 	})
 
 	return appRunner.RunConvertTGS(request, stdout)
+}
+
+func runConvertWEBPCommand(args []string, stdout io.Writer, stderr io.Writer) error {
+	if len(args) == 1 && isHelpCommand(args[0]) {
+		PrintConvertWEBPHelp(stdout)
+		return nil
+	}
+
+	convertWEBPFlags := flag.NewFlagSet("assetx convert-webp", flag.ContinueOnError)
+	convertWEBPFlags.SetOutput(stderr)
+	convertWEBPFlags.String("in", "", "input WebP image path")
+	convertWEBPFlags.String("out", "", "output PNG path")
+	convertWEBPFlags.Usage = func() {
+		PrintConvertWEBPHelp(stderr)
+	}
+
+	if err := convertWEBPFlags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil
+		}
+		return err
+	}
+	if convertWEBPFlags.NArg() > 1 {
+		return fmt.Errorf("unexpected positional arguments: %s", strings.Join(convertWEBPFlags.Args(), " "))
+	}
+
+	request := &appRunner.ConvertWEBPRequest{}
+	convertWEBPFlags.VisitAll(func(flagValue *flag.Flag) {
+		switch flagValue.Name {
+		case "in":
+			request.InputPath = flagValue.Value.String()
+		case "out":
+			request.OutputPath = flagValue.Value.String()
+		}
+	})
+
+	if convertWEBPFlags.NArg() == 1 {
+		if strings.TrimSpace(request.InputPath) != "" {
+			return fmt.Errorf("use either --in or one positional input path, not both")
+		}
+		request.InputPath = convertWEBPFlags.Arg(0)
+	}
+
+	return appRunner.RunConvertWEBP(request, stdout)
 }
 
 func runRemoveBackgroundCommand(args []string, stdout io.Writer, stderr io.Writer) error {

@@ -1,14 +1,13 @@
 package appRunner
 
 import (
-	"assetx/src/converters/tgsConverter"
-	"context"
+	"assetx/src/converters/webpConverter"
 	"fmt"
 	"io"
 )
 
-func RunConvertTGS(request *ConvertTGSRequest, stdout io.Writer) error {
-	if err := normalizeConvertTGSRequest(request); err != nil {
+func RunConvertWEBP(request *ConvertWEBPRequest, stdout io.Writer) error {
+	if err := normalizeConvertWEBPRequest(request); err != nil {
 		return err
 	}
 
@@ -16,8 +15,7 @@ func RunConvertTGS(request *ConvertTGSRequest, stdout io.Writer) error {
 		return err
 	}
 
-	if err := tgsConverter.ConvertTGSToSpritePNG(context.Background(), &tgsConverter.ConvertTGSOptions{
-		FFMPEGPath: request.FFMPEGPath,
+	if err := webpConverter.ConvertWebpToPNG(&webpConverter.ConvertWEBPOptions{
 		InputPath:  request.InputPath,
 		OutputPath: request.OutputPath,
 	}); err != nil {

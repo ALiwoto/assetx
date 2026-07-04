@@ -19,6 +19,11 @@ type ConvertTGSRequest struct {
 	OutputPath string
 }
 
+type ConvertWEBPRequest struct {
+	InputPath  string
+	OutputPath string
+}
+
 type RemoveBackgroundRequest struct {
 	Color      string
 	InputPath  string

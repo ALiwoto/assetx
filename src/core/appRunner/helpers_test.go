@@ -151,6 +151,49 @@ func TestNormalizeConvertTGSRequestDefaultsFFMPEGPath(t *testing.T) {
 	}
 }
 
+func TestNormalizeConvertWEBPRequestDefaultsOutputPath(t *testing.T) {
+	inputPath := createTestExampleFile(t, "example.webp")
+	request := &ConvertWEBPRequest{
+		InputPath: inputPath,
+	}
+
+	if err := normalizeConvertWEBPRequest(request); err != nil {
+		t.Fatalf("normalizeConvertWEBPRequest returned error: %v", err)
+	}
+	if request.OutputPath != inputPath+".png" {
+		t.Fatalf("Expected default output path %q, but got %q", inputPath+".png", request.OutputPath)
+	}
+}
+
+func TestNormalizeConvertWEBPRequestRejectsNonWEBPInput(t *testing.T) {
+	inputPath := createTestExampleFile(t, "example.png")
+
+	err := normalizeConvertWEBPRequest(&ConvertWEBPRequest{
+		InputPath: inputPath,
+	})
+	if err == nil {
+		t.Fatal("Expected non-WebP input error, but got nil")
+	}
+	if !strings.Contains(err.Error(), ".webp input path") {
+		t.Fatalf("Expected WebP input error, but got %q", err.Error())
+	}
+}
+
+func TestNormalizeConvertWEBPRequestRejectsNonPNGOutput(t *testing.T) {
+	inputPath := createTestExampleFile(t, "example.webp")
+
+	err := normalizeConvertWEBPRequest(&ConvertWEBPRequest{
+		InputPath:  inputPath,
+		OutputPath: "out.jpg",
+	})
+	if err == nil {
+		t.Fatal("Expected non-PNG output error, but got nil")
+	}
+	if !strings.Contains(err.Error(), ".png --out path") {
+		t.Fatalf("Expected PNG output error, but got %q", err.Error())
+	}
+}
+
 func createTestExampleFile(t *testing.T, fileName string) string {
 	t.Helper()
 

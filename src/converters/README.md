@@ -15,5 +15,9 @@ Example with 10 frames and 4 columns:
 9, 10
 ```
 
+## webpConverter
+
+The WebP converter decodes a `.webp` image in Go and writes a PNG image.
+
 
 

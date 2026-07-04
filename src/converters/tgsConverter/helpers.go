@@ -13,11 +13,11 @@ import (
 	"strings"
 )
 
-func ConvertTGSToSpritePNG(ctx context.Context, options ConvertTGSOptions) error {
+func ConvertTGSToSpritePNG(ctx context.Context, options *ConvertTGSOptions) error {
 	if ctx == nil {
 		return fmt.Errorf("cannot convert TGS because context is nil")
 	}
-	if err := normalizeConvertTGSOptions(&options); err != nil {
+	if err := normalizeConvertTGSOptions(options); err != nil {
 		return err
 	}
 	if err := rejectUnsupportedTGSMagic(options.InputPath); err != nil {
