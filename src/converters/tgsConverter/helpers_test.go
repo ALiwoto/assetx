@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -66,6 +67,22 @@ func TestRejectUnsupportedTGSMagicRejectsGzipLottie(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "gzip-compressed Lottie .tgs") {
 		t.Fatalf("Expected gzip Lottie error, but got %q", err.Error())
+	}
+}
+
+func TestExtractTGSFramesLetsFFMPEGDetectInputCodec(t *testing.T) {
+	arguments := tgsFrameExtractionArguments("input.tgs", "frame_%08d.png")
+	expectedArguments := []string{
+		"-hide_banner",
+		"-y",
+		"-i",
+		"input.tgs",
+		"-pix_fmt",
+		"rgba",
+		"frame_%08d.png",
+	}
+	if !reflect.DeepEqual(arguments, expectedArguments) {
+		t.Fatalf("Expected ffmpeg arguments %#v, but got %#v", expectedArguments, arguments)
 	}
 }
 

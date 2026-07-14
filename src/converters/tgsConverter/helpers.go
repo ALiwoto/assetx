@@ -119,19 +119,7 @@ func resolveFFMPEGPath(ffmpegPath string) (string, error) {
 }
 
 func extractTGSFrames(ctx context.Context, ffmpegPath string, inputPath string, framePattern string) error {
-	command := exec.CommandContext(
-		ctx,
-		ffmpegPath,
-		"-hide_banner",
-		"-y",
-		"-c:v",
-		"libvpx-vp9",
-		"-i",
-		inputPath,
-		"-pix_fmt",
-		"rgba",
-		framePattern,
-	)
+	command := exec.CommandContext(ctx, ffmpegPath, tgsFrameExtractionArguments(inputPath, framePattern)...)
 
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
@@ -145,6 +133,18 @@ func extractTGSFrames(ctx context.Context, ffmpegPath string, inputPath string, 
 	}
 
 	return nil
+}
+
+func tgsFrameExtractionArguments(inputPath string, framePattern string) []string {
+	return []string{
+		"-hide_banner",
+		"-y",
+		"-i",
+		inputPath,
+		"-pix_fmt",
+		"rgba",
+		framePattern,
+	}
 }
 
 func writeFrameSpritePNG(framePaths []string, outputPath string) error {
