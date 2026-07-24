@@ -30,3 +30,11 @@ type RemoveBackgroundRequest struct {
 	OutputPath string
 	Tolerance  int
 }
+
+type SearchRequest struct {
+	AllowedDomains    []string
+	ConfigPath        string
+	Model             string
+	Query             string
+	SearchContextSize string
+}

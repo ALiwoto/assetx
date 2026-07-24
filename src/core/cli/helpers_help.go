@@ -2,6 +2,7 @@ package cli
 
 import (
 	"assetx/src/converters/tgsConverter"
+	"assetx/src/core/appRunner"
 	"assetx/src/core/imageProcessing"
 	"fmt"
 	"io"
@@ -16,25 +17,50 @@ func PrintRootHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "Commands:")
 	_, _ = fmt.Fprintln(writer, "  image        Generate or edit an image asset")
 	_, _ = fmt.Fprintln(writer, "  remove-bg    Remove a solid background color from an image")
+	_, _ = fmt.Fprintln(writer, "  search       Search the web with the OpenAI Responses API")
 	_, _ = fmt.Fprintln(writer, "  convert-tgs  Convert a Telegram emoji/sticker file to a sprite PNG")
 	_, _ = fmt.Fprintln(writer, "  convert-webp Convert a WebP image to PNG")
 	_, _ = fmt.Fprintln(writer, "  help         Show help for assetx or a command")
 	_, _ = fmt.Fprintln(writer, "  version      Print version, target platform, commit, and commit date")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Currently implemented provider:")
-	_, _ = fmt.Fprintln(writer, "  openai     Models: gpt-image-2, gpt-image-1.5")
+	_, _ = fmt.Fprintln(writer, "  openai     Models: gpt-image-2, gpt-image-1.5, and Responses API search models")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Common help:")
 	_, _ = fmt.Fprintln(writer, "  assetx help image")
 	_, _ = fmt.Fprintln(writer, "  assetx help convert-tgs")
 	_, _ = fmt.Fprintln(writer, "  assetx help convert-webp")
 	_, _ = fmt.Fprintln(writer, "  assetx help config")
+	_, _ = fmt.Fprintln(writer, "  assetx help search")
 	_, _ = fmt.Fprintln(writer, "  assetx image --help")
 	_, _ = fmt.Fprintln(writer)
 	PrintConfigSummary(writer)
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Example:")
 	_, _ = fmt.Fprintln(writer, "  assetx image --model gpt-image-2 --background transparent --prompt \"create a battle win header\" --example example1.png --example-note \"screenshot of my game\" --example example2.png --example-note \"existing UI asset style reference\" --quality medium --size 1024x1024 --out assets/sprites/header.png")
+}
+
+func PrintSearchHelp(writer io.Writer) {
+	_, _ = fmt.Fprintln(writer, "assetx search - search the web with the OpenAI Responses API.")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Usage:")
+	_, _ = fmt.Fprintln(writer, "  assetx [--config path/to/config.json] search --query \"...\" [options]")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Required:")
+	_, _ = fmt.Fprintln(writer, "  --query string      Question or research request")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Options:")
+	_, _ = fmt.Fprintf(writer, "  --model string      Responses API model (default: %s)\n", appRunner.DefaultSearchModel)
+	_, _ = fmt.Fprintf(writer, "  --context string    low, medium, or high (default: %s)\n", appRunner.DefaultSearchContextSize)
+	_, _ = fmt.Fprintln(writer, "  --domain hostname   Allow only this domain and its subdomains; repeat for multiple domains")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Behavior:")
+	_, _ = fmt.Fprintln(writer, "  Web search is required for every request. Results are printed as Markdown with clickable source links.")
+	_, _ = fmt.Fprintln(writer, "  Domain values must omit schemes and paths: use fab.com, not https://www.fab.com/search.")
+	_, _ = fmt.Fprintln(writer)
+	_, _ = fmt.Fprintln(writer, "Examples:")
+	_, _ = fmt.Fprintln(writer, "  assetx search --query \"What changed in Unreal Engine this month?\"")
+	_, _ = fmt.Fprintln(writer, "  assetx search --domain fab.com --query \"Find modular medieval character systems for Unreal Engine\"")
 }
 
 func PrintImageHelp(writer io.Writer) {

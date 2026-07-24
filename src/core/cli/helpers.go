@@ -52,6 +52,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 			return ExitFailure
 		}
 		return ExitSuccess
+	case "search":
+		if err := runSearchCommand(filteredArgs[1:], configPath, stdout, stderr); err != nil {
+			_, _ = fmt.Fprintf(stderr, "assetx search: %v\n", err)
+			return ExitFailure
+		}
+		return ExitSuccess
 	case "version", "--version", "-v":
 		if len(filteredArgs) > 1 {
 			_, _ = fmt.Fprintf(stderr, "assetx version: unexpected arguments: %s\n", strings.Join(filteredArgs[1:], " "))

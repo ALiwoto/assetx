@@ -21,3 +21,9 @@ assetx convert-webp --in "input_file.webp" --out "output_file.png"
 assetx convert-webp "input_file.webp"
 ```
 
+Search the web through the OpenAI Responses API and print sourced Markdown:
+
+```bash
+assetx search --domain fab.com --query "Find modular medieval character systems for Unreal Engine"
+```
+

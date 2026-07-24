@@ -29,6 +29,9 @@ func HandleHelpCommand(args []string, stdout io.Writer, stderr io.Writer) int {
 	case "remove-bg":
 		PrintRemoveBackgroundHelp(stdout)
 		return ExitSuccess
+	case "search":
+		PrintSearchHelp(stdout)
+		return ExitSuccess
 	case "version":
 		PrintVersionHelp(stdout)
 		return ExitSuccess
