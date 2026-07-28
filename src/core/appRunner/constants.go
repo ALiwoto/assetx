@@ -1,5 +1,7 @@
 package appRunner
 
+import "time"
+
 const BackgroundAuto = "auto"
 const BackgroundOpaque = "opaque"
 const BackgroundTransparent = "transparent"
@@ -10,6 +12,8 @@ const DefaultImageSize = "1024x1024"
 
 const DefaultSearchContextSize = "medium"
 const DefaultSearchModel = "gpt-5.6"
+const DefaultSearchProgressInterval = 25 * time.Second
+const DefaultSearchTimeout = 2 * time.Minute
 
 const SearchContextHigh = "high"
 const SearchContextLow = "low"

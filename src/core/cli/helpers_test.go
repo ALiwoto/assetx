@@ -43,4 +43,46 @@ func TestRunSearchHelp(t *testing.T) {
 	if !strings.Contains(stdout.String(), "assetx search") {
 		t.Fatalf("Expected search help, but got %q", stdout.String())
 	}
+	if !strings.Contains(stdout.String(), "--timeout duration") {
+		t.Fatalf("Expected search timeout help, but got %q", stdout.String())
+	}
+}
+
+func TestRunSearchRejectsInvalidTimeout(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	exitCode := Run([]string{"search", "--query", "test", "--timeout", "later"}, &stdout, &stderr)
+	if exitCode != ExitFailure {
+		t.Fatalf("Expected failure exit code, but got %d", exitCode)
+	}
+	if !strings.Contains(stderr.String(), "invalid value") {
+		t.Fatalf("Expected invalid duration error, but got %q", stderr.String())
+	}
+}
+
+func TestRunSearchRejectsZeroTimeout(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	exitCode := Run([]string{"search", "--query", "test", "--timeout", "0"}, &stdout, &stderr)
+	if exitCode != ExitFailure {
+		t.Fatalf("Expected failure exit code, but got %d", exitCode)
+	}
+	if !strings.Contains(stderr.String(), "expected a positive duration") {
+		t.Fatalf("Expected positive duration error, but got %q", stderr.String())
+	}
+}
+
+func TestRunSearchPositionalQuerySuggestsQueryFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	exitCode := Run([]string{"search", "test query"}, &stdout, &stderr)
+	if exitCode != ExitFailure {
+		t.Fatalf("Expected failure exit code, but got %d", exitCode)
+	}
+	if !strings.Contains(stderr.String(), `--query "..."`) {
+		t.Fatalf("Expected --query guidance, but got %q", stderr.String())
+	}
 }

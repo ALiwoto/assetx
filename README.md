@@ -27,3 +27,13 @@ Search the web through the OpenAI Responses API and print sourced Markdown:
 assetx search --domain fab.com --query "Find modular medieval character systems for Unreal Engine"
 ```
 
+Search progress is written to stderr every 10 seconds. The API wait defaults to two minutes;
+both behaviors are configurable:
+
+```bash
+assetx search --timeout 5m --progress-interval 15s --query "Research a complex topic"
+assetx search --progress-interval 0 --query "Run without progress messages"
+```
+
+The timeout of a script or process launching assetx must be longer than `--timeout`.
+

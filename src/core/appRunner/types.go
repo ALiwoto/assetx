@@ -1,5 +1,7 @@
 package appRunner
 
+import "time"
+
 type ImageRequest struct {
 	Avoids       []string
 	Background   string
@@ -35,6 +37,8 @@ type SearchRequest struct {
 	AllowedDomains    []string
 	ConfigPath        string
 	Model             string
+	ProgressInterval  time.Duration
 	Query             string
 	SearchContextSize string
+	Timeout           time.Duration
 }

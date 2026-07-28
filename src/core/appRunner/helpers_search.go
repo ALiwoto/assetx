@@ -3,7 +3,9 @@ package appRunner
 import (
 	"assetx/src/providers/openaiClient"
 	"fmt"
+	"io"
 	"strings"
+	"time"
 )
 
 func normalizeSearchRequest(request *SearchRequest) error {
@@ -35,6 +37,16 @@ func normalizeSearchRequest(request *SearchRequest) error {
 		)
 	}
 
+	if request.Timeout == 0 {
+		request.Timeout = DefaultSearchTimeout
+	}
+	if request.Timeout < 0 {
+		return fmt.Errorf("invalid --timeout %q: expected a positive duration", request.Timeout)
+	}
+	if request.ProgressInterval < 0 {
+		return fmt.Errorf("invalid --progress-interval %q: expected zero or a positive duration", request.ProgressInterval)
+	}
+
 	if len(request.AllowedDomains) > 100 {
 		return fmt.Errorf("expected no more than 100 --domain values, but got %d", len(request.AllowedDomains))
 	}
@@ -61,6 +73,46 @@ func normalizeSearchRequest(request *SearchRequest) error {
 	request.AllowedDomains = normalizedDomains
 
 	return nil
+}
+
+func startSearchProgress(writer io.Writer, interval time.Duration, timeout time.Duration) func() {
+	if writer == nil || interval <= 0 {
+		return func() {}
+	}
+
+	startedAt := time.Now()
+	_, _ = fmt.Fprintf(
+		writer,
+		"[assetx]: [progress]: waiting for API response (timeout: %s)...\n",
+		timeout,
+	)
+
+	done := make(chan struct{})
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				elapsed := time.Since(startedAt).Round(time.Second)
+				_, _ = fmt.Fprintf(
+					writer,
+					"[assetx]: [progress]: still waiting for API response (%s elapsed)...\n",
+					elapsed,
+				)
+			}
+		}
+	}()
+
+	return func() {
+		close(done)
+		<-finished
+	}
 }
 
 func isSupportedSearchContextSize(contextSize string) bool {
