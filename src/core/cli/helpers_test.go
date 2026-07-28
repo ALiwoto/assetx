@@ -74,15 +74,19 @@ func TestRunSearchRejectsZeroTimeout(t *testing.T) {
 	}
 }
 
-func TestRunSearchPositionalQuerySuggestsQueryFlag(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	exitCode := Run([]string{"search", "test query"}, &stdout, &stderr)
-	if exitCode != ExitFailure {
-		t.Fatalf("Expected failure exit code, but got %d", exitCode)
+func TestResolveSearchQueryAcceptsPositionalWords(t *testing.T) {
+	query, err := resolveSearchQuery("", []string{"find", "bbolt", "documentation"})
+	if err != nil {
+		t.Fatalf("resolveSearchQuery returned error: %v", err)
 	}
-	if !strings.Contains(stderr.String(), `--query "..."`) {
-		t.Fatalf("Expected --query guidance, but got %q", stderr.String())
+	if query != "find bbolt documentation" {
+		t.Fatalf("Expected joined positional query, but got %q", query)
+	}
+}
+
+func TestResolveSearchQueryRejectsBothForms(t *testing.T) {
+	_, err := resolveSearchQuery("flag query", []string{"positional query"})
+	if err == nil || !strings.Contains(err.Error(), "not both") {
+		t.Fatalf("Expected conflicting query forms error, but got %v", err)
 	}
 }

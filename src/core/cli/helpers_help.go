@@ -44,10 +44,12 @@ func PrintSearchHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "assetx search - search the web with the OpenAI Responses API.")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Usage:")
+	_, _ = fmt.Fprintln(writer, "  assetx [--config path/to/config.json] search [options] \"query\"")
 	_, _ = fmt.Fprintln(writer, "  assetx [--config path/to/config.json] search --query \"...\" [options]")
 	_, _ = fmt.Fprintln(writer)
-	_, _ = fmt.Fprintln(writer, "Required:")
-	_, _ = fmt.Fprintln(writer, "  --query string      Question or research request")
+	_, _ = fmt.Fprintln(writer, "Query:")
+	_, _ = fmt.Fprintln(writer, "  Provide the question as one or more positional words, or with --query string.")
+	_, _ = fmt.Fprintln(writer, "  Options must appear before a positional query. Do not use both forms together.")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Options:")
 	_, _ = fmt.Fprintf(writer, "  --model string      Responses API model (default: %s)\n", appRunner.DefaultSearchModel)
@@ -59,9 +61,11 @@ func PrintSearchHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "Behavior:")
 	_, _ = fmt.Fprintln(writer, "  Web search is required for every request. Results are printed as Markdown with clickable source links.")
 	_, _ = fmt.Fprintln(writer, "  Progress is printed to stderr so stdout remains clean. A calling process must allow more time than --timeout.")
+	_, _ = fmt.Fprintln(writer, "  Successful searches are saved under ~/.assetx/search_history unless disable_search_history is true.")
 	_, _ = fmt.Fprintln(writer, "  Domain values must omit schemes and paths: use fab.com, not https://www.fab.com/search.")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Examples:")
+	_, _ = fmt.Fprintln(writer, "  assetx search \"What changed in Unreal Engine this month?\"")
 	_, _ = fmt.Fprintln(writer, "  assetx search --query \"What changed in Unreal Engine this month?\"")
 	_, _ = fmt.Fprintln(writer, "  assetx search --domain fab.com --query \"Find modular medieval character systems for Unreal Engine\"")
 }
@@ -117,11 +121,12 @@ func PrintConfigHelp(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "JSON example:")
 	_, _ = fmt.Fprintln(writer, "{")
 	_, _ = fmt.Fprintln(writer, "  \"proxy_base_url\": \"\",")
-	_, _ = fmt.Fprintln(writer, "  \"api_key\": \"b64::base64_encoded_key_here\"")
+	_, _ = fmt.Fprintln(writer, "  \"api_key\": \"b64::base64_encoded_key_here\",")
+	_, _ = fmt.Fprintln(writer, "  \"disable_search_history\": false")
 	_, _ = fmt.Fprintln(writer, "}")
 	_, _ = fmt.Fprintln(writer)
 	_, _ = fmt.Fprintln(writer, "Proxy example:")
-	_, _ = fmt.Fprintln(writer, "  \"proxy_base_url\": \"https://main.purroxy.org/openai/v1\"")
+	_, _ = fmt.Fprintln(writer, "  \"proxy_base_url\": \"https://example.com/openai/v1\"")
 }
 
 func PrintRemoveBackgroundHelp(writer io.Writer) {
@@ -204,4 +209,5 @@ func PrintConfigSummary(writer io.Writer) {
 	_, _ = fmt.Fprintln(writer, "  proxy_base_url empty string uses the default API base for the current provider.")
 	_, _ = fmt.Fprintln(writer, "  proxy_base_url non-empty must be an OpenAI-compatible API base URL for the current OpenAI provider.")
 	_, _ = fmt.Fprintln(writer, "  api_key may be raw or prefixed with b64:: followed by a base64-encoded key.")
+	_, _ = fmt.Fprintln(writer, "  disable_search_history defaults to false; set it to true to stop writing search history files.")
 }

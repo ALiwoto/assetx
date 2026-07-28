@@ -2,9 +2,27 @@ package appConfig
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"strings"
 	"testing"
 )
+
+func TestDisableSearchHistoryDefaultsFalse(t *testing.T) {
+	var config AssetxConfig
+	if err := json.Unmarshal([]byte(`{"api_key":"test"}`), &config); err != nil {
+		t.Fatalf("Failed to decode config: %v", err)
+	}
+	if config.DisableSearchHistory {
+		t.Fatal("Expected disable_search_history to default to false")
+	}
+
+	if err := json.Unmarshal([]byte(`{"api_key":"test","disable_search_history":true}`), &config); err != nil {
+		t.Fatalf("Failed to decode config with disabled search history: %v", err)
+	}
+	if !config.DisableSearchHistory {
+		t.Fatal("Expected disable_search_history=true to be retained")
+	}
+}
 
 func TestNormalizeConfigAllowsEmptyProxyAndDecodesBase64APIKey(t *testing.T) {
 	rawAPIKey := "sk-test-key"

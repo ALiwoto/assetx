@@ -24,8 +24,12 @@ assetx convert-webp "input_file.webp"
 Search the web through the OpenAI Responses API and print sourced Markdown:
 
 ```bash
+assetx search "Find modular medieval character systems for Unreal Engine"
 assetx search --domain fab.com --query "Find modular medieval character systems for Unreal Engine"
 ```
+
+Successful searches are saved as Markdown under `~/.assetx/search_history/`. To disable
+history, set `"disable_search_history": true` in `~/.assetx/config.json`.
 
 Search progress is written to stderr every 10 seconds. The API wait defaults to two minutes;
 both behaviors are configurable:

@@ -41,6 +41,13 @@ func RunSearch(request *SearchRequest, stdout io.Writer, stderr io.Writer) error
 		return err
 	}
 
-	_, _ = fmt.Fprintln(stdout, formatWebSearchResult(result))
+	formattedResult := formatWebSearchResult(result)
+	if !config.DisableSearchHistory {
+		if err := saveSearchHistory(request, formattedResult); err != nil {
+			return err
+		}
+	}
+
+	_, _ = fmt.Fprintln(stdout, formattedResult)
 	return nil
 }

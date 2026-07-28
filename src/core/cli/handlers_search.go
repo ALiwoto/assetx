@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"strings"
 )
 
 func runSearchCommand(args []string, configPath string, stdout io.Writer, stderr io.Writer) error {
@@ -18,9 +17,9 @@ func runSearchCommand(args []string, configPath string, stdout io.Writer, stderr
 	var allowedDomains repeatedStringFlag
 	searchFlags := flag.NewFlagSet("assetx search", flag.ContinueOnError)
 	searchFlags.SetOutput(stderr)
-	searchFlags.String("query", "", "question or research request")
-	searchFlags.String("model", appRunner.DefaultSearchModel, "Responses API model")
-	searchFlags.String("context", appRunner.DefaultSearchContextSize, "web search context size: low, medium, or high")
+	query := searchFlags.String("query", "", "question or research request")
+	model := searchFlags.String("model", appRunner.DefaultSearchModel, "Responses API model")
+	searchContext := searchFlags.String("context", appRunner.DefaultSearchContextSize, "web search context size: low, medium, or high")
 	searchFlags.Var(&allowedDomains, "domain", "allowed search hostname without scheme; repeat for multiple domains")
 	progressInterval := searchFlags.Duration(
 		"progress-interval",
@@ -38,32 +37,23 @@ func runSearchCommand(args []string, configPath string, stdout io.Writer, stderr
 		}
 		return err
 	}
-	if searchFlags.NArg() != 0 {
-		return fmt.Errorf(
-			"unexpected positional arguments: %s; pass the search text with --query \"...\"",
-			strings.Join(searchFlags.Args(), " "),
-		)
+	resolvedQuery, err := resolveSearchQuery(*query, searchFlags.Args())
+	if err != nil {
+		return err
 	}
 	if *timeout <= 0 {
 		return fmt.Errorf("invalid --timeout %q: expected a positive duration", *timeout)
 	}
 
 	request := &appRunner.SearchRequest{
-		AllowedDomains:   []string(allowedDomains),
-		ConfigPath:       configPath,
-		ProgressInterval: *progressInterval,
-		Timeout:          *timeout,
+		AllowedDomains:    []string(allowedDomains),
+		ConfigPath:        configPath,
+		Model:             *model,
+		ProgressInterval:  *progressInterval,
+		Query:             resolvedQuery,
+		SearchContextSize: *searchContext,
+		Timeout:           *timeout,
 	}
-	searchFlags.VisitAll(func(flagValue *flag.Flag) {
-		switch flagValue.Name {
-		case "context":
-			request.SearchContextSize = flagValue.Value.String()
-		case "model":
-			request.Model = flagValue.Value.String()
-		case "query":
-			request.Query = flagValue.Value.String()
-		}
-	})
 
 	return appRunner.RunSearch(request, stdout, stderr)
 }
